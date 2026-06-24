@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
-    "build": "expo export:web"
+    "build": "npx expo export"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
