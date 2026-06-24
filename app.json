@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Contry",
+    "slug": "contry",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "contry",
+    "icon": "./image/Logo.png",
+    "splash": {
+      "backgroundColor": "#22C55E"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./image/Logo.png",
+        "backgroundColor": "#22C55E"
+      }
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-image-picker"
+    ]
+  }
+}
