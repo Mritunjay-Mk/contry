@@ -16,6 +16,10 @@ export const repository = {
       "SELECT id, groupId, amount, paidBy, category, description, date, merchantName, billFingerprint FROM expenses ORDER BY date DESC"
     );
   },
+  getSettlements() {
+    if (!db) return [];
+    return db.getAllSync<Settlement>("SELECT id, groupId, fromMember, toMember, amount, status FROM settlements");
+  },
   getSettledIds() {
     if (!db) return [];
     return db
@@ -92,5 +96,30 @@ export const repository = {
   deleteSettlementsForGroup(groupId: string) {
     if (!db) return;
     db.runSync("DELETE FROM settlements WHERE groupId = ?", [groupId]);
+  },
+  // New bulk delete methods
+  deleteAllGroups() {
+    if (!db) return;
+    db.runSync("DELETE FROM groups");
+  },
+  deleteAllMembers() {
+    if (!db) return;
+    db.runSync("DELETE FROM members");
+  },
+  deleteAllExpenses() {
+    if (!db) return;
+    db.runSync("DELETE FROM expenses");
+  },
+  deleteAllSettlements() {
+    if (!db) return;
+    db.runSync("DELETE FROM settlements");
+  },
+  clearAll() {
+    if (!db) return;
+    // Order matters due to foreign keys: delete child tables first
+    this.deleteAllSettlements();
+    this.deleteAllExpenses();
+    this.deleteAllMembers();
+    this.deleteAllGroups();
   }
 };

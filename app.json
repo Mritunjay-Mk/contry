@@ -11,9 +11,13 @@
       "backgroundColor": "#22C55E"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.contry",
+      "buildNumber": "1"
     },
     "android": {
+      "package": "com.example.contry",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./client/image/Logo.png",
         "backgroundColor": "#22C55E"
