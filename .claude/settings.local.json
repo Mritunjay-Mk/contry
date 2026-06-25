@@ -4,7 +4,23 @@
       "Bash(npm run *)",
       "Bash(npx eslint *)",
       "Bash(ls -la \"/e:/Contry/\")",
-      "Read(//e:/**)"
+      "Read(//e:/**)",
+      "Bash(git mv *)",
+      "Bash(cmd /c \"ren src client\")",
+      "Bash(powershell -Command \"Rename-Item -Path src -NewName client\")",
+      "Bash(tasklist)",
+      "Bash(findstr node *)",
+      "Bash(mv src/* client/src/)",
+      "Bash(mv client/src/* client/)",
+      "Bash(tsc --noEmit)",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"require\\('./package.json'\\); console.log\\('JSON valid'\\)\")",
+      "Bash(timeout 15 npx expo export --web)",
+      "Bash(grep -r \"from ['\\\\\"]\\\\.\\\\/src\\\\/\" . --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.jsx\" --exclude-dir=node_modules --exclude-dir=.git)"
+    ],
+    "additionalDirectories": [
+      "E:\\Contry\\src",
+      "e:\\Contry\\client\\src"
     ]
   }
 }

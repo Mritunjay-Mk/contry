@@ -5,8 +5,8 @@
     "types": ["react", "react-native"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["client/*"]
     }
   },
-  "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx"]
+  "include": ["App.tsx", "client/**/*.ts", "client/**/*.tsx"]
 }

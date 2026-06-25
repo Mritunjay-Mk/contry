@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "contry",
-    "icon": "./image/Logo.png",
+    "icon": "./client/image/Logo.png",
     "splash": {
       "backgroundColor": "#22C55E"
     },
@@ -15,7 +15,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./image/Logo.png",
+        "foregroundImage": "./client/image/Logo.png",
         "backgroundColor": "#22C55E"
       }
     },
