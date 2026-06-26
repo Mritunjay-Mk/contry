@@ -16,7 +16,9 @@
       "Bash(npx tsc *)",
       "Bash(node -e \"require\\('./package.json'\\); console.log\\('JSON valid'\\)\")",
       "Bash(timeout 15 npx expo export --web)",
-      "Bash(grep -r \"from ['\\\\\"]\\\\.\\\\/src\\\\/\" . --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.jsx\" --exclude-dir=node_modules --exclude-dir=.git)"
+      "Bash(grep -r \"from ['\\\\\"]\\\\.\\\\/src\\\\/\" . --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.jsx\" --exclude-dir=node_modules --exclude-dir=.git)",
+      "Bash(xargs grep -i chat)",
+      "Bash(git log *)"
     ],
     "additionalDirectories": [
       "E:\\Contry\\src",

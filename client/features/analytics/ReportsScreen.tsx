@@ -264,10 +264,37 @@ export function ReportsScreen() {
         <Text>Top spender: {stats.topSpender?.name ?? "None"}</Text>
       </PremiumCard>
       <PremiumCard title="Export and share">
-        <Button mode="contained" icon={() => <Share2 size={18} color="#FFFFFF" />} onPress={() => group && buildShareSummary(group, expenses, members, settlements)}>
+        <Button mode="contained" icon={() => <Share2 size={18} color="#FFFFFF" />} onPress={async () => {
+          if (!group) return;
+          try {
+            const shareText = buildShareSummary(group, expenses, members, settlements);
+            const file = await FileSystem.writeAsStringAsync(
+              `${FileSystem.documentDirectory}share.txt`,
+              shareText,
+              { encoding: FileSystem.EncodingType.UTF8 }
+            );
+            await Sharing.shareAsync(file.uri, { mimeType: 'text/plain' });
+          } catch (err) {
+            console.error(err);
+            Alert.alert('Failed to share summary');
+          }
+        }}>
           Generate share summary
         </Button>
-        <Button mode="outlined" onPress={() => buildCsvReport(expenses, members)}>
+        <Button mode="outlined" onPress={async () => {
+          try {
+            const csv = buildCsvReport(expenses, members);
+            const file = await FileSystem.writeAsStringAsync(
+              `${FileSystem.documentDirectory}report.csv`,
+              csv,
+              { encoding: FileSystem.EncodingType.UTF8 }
+            );
+            await Sharing.shareAsync(file.uri, { mimeType: 'text/csv' });
+          } catch (err) {
+            console.error(err);
+            Alert.alert('Failed to export CSV');
+          }
+        }}>
           Export CSV report
         </Button>
         <Button mode="outlined" onPress={generatePDFReport}>
