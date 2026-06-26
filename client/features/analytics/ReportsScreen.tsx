@@ -38,7 +38,6 @@ export function ReportsScreen() {
   })).filter((item) => item.amount > 0);
 
   // State for backup/restore
-  const [backupVisible, setBackupVisible] = useState(false);
   const [restoreVisible, setRestoreVisible] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState(['groups', 'members', 'expenses', 'settlements']);
   const [selectAll, setSelectAll] = useState(true);
@@ -94,40 +93,53 @@ export function ReportsScreen() {
   };
 
   const handleRestoreConfirm = async () => {
-    try {
-      if (!backupData) return;
-      // Delete selected types
-      if (selectAll || selectedTypes.includes('groups')) {
-        repository.deleteAllGroups();
-        for (const g of backupData.groups) {
-          repository.upsertGroup(g);
-        }
-      }
-      if (selectAll || selectedTypes.includes('members')) {
-        repository.deleteAllMembers();
-        for (const m of backupData.members) {
-          repository.upsertMember(m);
-        }
-      }
-      if (selectAll || selectedTypes.includes('expenses')) {
-        repository.deleteAllExpenses();
-        for (const e of backupData.expenses) {
-          repository.upsertExpense(e);
-        }
-      }
-      if (selectAll || selectedTypes.includes('settlements')) {
-        repository.deleteAllSettlements();
-        for (const s of backupData.settlements) {
-          repository.upsertSettlement(s);
-        }
-      }
-      Alert.alert('Restore complete', 'Data has been restored.');
-      setRestoreVisible(false);
-      setBackupData(null);
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Restore failed', 'Could not restore data.');
-    }
+    Alert.alert(
+      'Confirm Restore',
+      'This will replace the selected data with the backup. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          onPress: async () => {
+            try {
+              if (!backupData) return;
+              // Delete selected types
+              if (selectAll || selectedTypes.includes('groups')) {
+                repository.deleteAllGroups();
+                for (const g of backupData.groups) {
+                  repository.upsertGroup(g);
+                }
+              }
+              if (selectAll || selectedTypes.includes('members')) {
+                repository.deleteAllMembers();
+                for (const m of backupData.members) {
+                  repository.upsertMember(m);
+                }
+              }
+              if (selectAll || selectedTypes.includes('expenses')) {
+                repository.deleteAllExpenses();
+                for (const e of backupData.expenses) {
+                  repository.upsertExpense(e);
+                }
+              }
+              if (selectAll || selectedTypes.includes('settlements')) {
+                repository.deleteAllSettlements();
+                for (const s of backupData.settlements) {
+                  repository.upsertSettlement(s);
+                }
+              }
+              Alert.alert('Restore complete', 'Data has been restored.');
+              setRestoreVisible(false);
+              setBackupData(null);
+            } catch (err) {
+              console.error(err);
+              Alert.alert('Restore failed', 'Could not restore data.');
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const monthlyTotal = expenses
