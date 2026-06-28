@@ -1,7 +1,7 @@
 import { Share2 } from "lucide-react-native";
-import { Dimensions, View, FlatList } from "react-native";
+import { Dimensions, View } from "react-native";
 import { PieChart, BarChart, LineChart } from "react-native-chart-kit";
-import { Button, Text, useTheme, Picker, Modal, CheckBox, View as RNView, Text as RNText, Alert } from "react-native-paper";
+import * as RNP from "react-native-paper";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
@@ -18,30 +18,66 @@ import { formatMoney } from "@/utils/money";
 import { repository } from "@/database/repository";
 import { Group, Member, Expense, Settlement } from "@/types";
 
+// Helper function to convert hex color to RGB string
+const hexToRgb = (hex) => {
+  // Remove the # if present
+  const cleanHex = hex.replace('#', '');
+
+  // Handle 3-digit hex format (e.g., #RGB)
+  if (cleanHex.length === 3) {
+    const r = parseInt(cleanHex.charAt(0) + cleanHex.charAt(0), 16);
+    const g = parseInt(cleanHex.charAt(1) + cleanHex.charAt(1), 16);
+    const b = parseInt(cleanHex.charAt(2) + cleanHex.charAt(2), 16);
+    return `${r},${g},${b}`;
+  }
+
+  // Handle 6-digit hex format (e.g., #RRGGBB)
+  if (cleanHex.length === 6) {
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    return `${r},${g},${b}`;
+  }
+
+  // If we can't parse it, return a default value
+  return "0,0,0";
+};
+
 export function ReportsScreen() {
-  const theme = useTheme();
+  const theme = RNP.useTheme();
   const currency = useSettingsStore((state) => state.currency);
   const selectedGroupId = useContryStore((state) => state.selectedGroupId);
   const group = useContryStore((state) => state.groups.find((item) => item.id === selectedGroupId));
-  const expenses = useContryStore((state) => state.getGroupExpenses());
-  const members = useContryStore((state) => state.getGroupMembers());
-  const settlements = useContryStore((state) => state.getSettlements());
-  const stats = useContryStore((state) => state.getDashboardStats());
+  const expenses = useContryStore((state) => state.getGroupExpenses()) || [];
+  const members = useContryStore((state) => state.getGroupMembers()) || [];
+  const settlements = useContryStore((state) => state.getSettlements()) || [];
+  const stats = useContryStore((state) => state.getDashboardStats()) || {
+    totalExpense: 0,
+    totalMembers: 0,
+    perPersonCost: 0,
+    pendingSettlement: 0,
+    topSpender: null
+  };
   const chartWidth = Dimensions.get("window").width - 64;
   const [selectedChartType, setSelectedChartType] = useState<'pie' | 'bar' | 'line'>('pie');
+
+  // Calculate category data - always returns an array
   const categoryData = CATEGORIES.map((category) => ({
     name: category,
-    amount: expenses.filter((expense) => expense.category === category).reduce((sum, expense) => sum + expense.amount, 0),
+    amount: expenses
+      .filter((expense) => expense.category === category)
+      .reduce((sum, expense) => sum + expense.amount, 0),
     color: CATEGORY_META[category].color,
     legendFontColor: theme.colors.onSurface,
     legendFontSize: 12
   })).filter((item) => item.amount > 0);
 
-  // State for backup/restore
-  const [restoreVisible, setRestoreVisible] = useState(false);
-  const [selectedTypes, setSelectedTypes] = useState(['groups', 'members', 'expenses', 'settlements']);
-  const [selectAll, setSelectAll] = useState(true);
-  const [backupData, setBackupData] = useState(null);
+  // BarChart and LineChart expect a { labels, datasets } shape rather than the
+  // accessor-based array that PieChart uses.
+  const seriesData = {
+    labels: categoryData.map((item) => item.name),
+    datasets: [{ data: categoryData.map((item) => item.amount) }],
+  };
 
   const handleBackup = async () => {
     try {
@@ -55,10 +91,10 @@ export function ReportsScreen() {
       const fileUri = FileSystem.documentDirectory + fileName;
       await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
       await Sharing.shareAsync(fileUri);
-      Alert.alert('Backup', 'Backup file shared successfully.');
+      RNP.Alert.alert('Backup', 'Backup file shared successfully.');
     } catch (err) {
       console.error(err);
-      Alert.alert('Backup failed', 'Could not create backup.');
+      RNP.Alert.alert('Backup failed', 'Could not create backup.');
     }
   };
 
@@ -83,17 +119,17 @@ export function ReportsScreen() {
           setSelectAll(true);
           setRestoreVisible(true);
         } else {
-          Alert.alert('Invalid backup', 'The selected file does not contain valid data.');
+          RNP.Alert.alert('Invalid backup', 'The selected file does not contain valid data.');
         }
       }
     } catch (err) {
       console.error(err);
-      Alert.alert('Restore failed', 'Could not read the selected file.');
+      RNP.Alert.alert('Restore failed', 'Could not read the selected file.');
     }
   };
 
   const handleRestoreConfirm = async () => {
-    Alert.alert(
+    RNP.Alert.alert(
       'Confirm Restore',
       'This will replace the selected data with the backup. Continue?',
       [
@@ -128,12 +164,12 @@ export function ReportsScreen() {
                   repository.upsertSettlement(s);
                 }
               }
-              Alert.alert('Restore complete', 'Data has been restored.');
+              RNP.Alert.alert('Restore complete', 'Data has been restored.');
               setRestoreVisible(false);
               setBackupData(null);
             } catch (err) {
               console.error(err);
-              Alert.alert('Restore failed', 'Could not restore data.');
+              RNP.Alert.alert('Restore failed', 'Could not restore data.');
             }
           },
         },
@@ -157,11 +193,12 @@ export function ReportsScreen() {
       // Escape HTML special characters in the report text
       const escapedText = reportText
         .replace(/&/g, '&')
-        .replace(/</g, '<')
-        .replace(/>/g, '>')
-        .replace(/"/g, '"')
+        .replace(/</g, '&')
+        .replace(/>/g, '&')
+        .replace(/"/g, '&')
         .replace(/'/g, '&#039;');
 
+      // HTML template for PDF generation
       const html = `
         <html>
           <body>
@@ -180,24 +217,28 @@ export function ReportsScreen() {
     }
   };
 
+  // State for backup/restore
+  const [restoreVisible, setRestoreVisible] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState(['groups', 'members', 'expenses', 'settlements']);
+  const [selectAll, setSelectAll] = useState(true);
+  const [backupData, setBackupData] = useState(null);
+
   return (
     <Screen>
-      <Text variant="headlineMedium">Reports</Text>
+      <RNP.Text variant="headlineMedium">Reports</RNP.Text>
       <View style={{ marginVertical: 16 }}>
-        <Picker
-          mode="dropdown"
-          placeholder="Select chart type"
+        <RNP.SegmentedButtons
           value={selectedChartType}
-          onValueChange={value => setSelectedChartType(value as 'pie' | 'bar' | 'line')}
-          style={{ width: chartWidth, marginLeft: 12 }}
-        >
-          <Picker.Item label="Pie Chart" value="pie" />
-          <Picker.Item label="Bar Chart" value="bar" />
-          <Picker.Item label="Line Chart" value="line" />
-        </Picker>
+          onValueChange={setSelectedChartType}
+          buttons={[
+            { value: 'pie', label: 'Pie' },
+            { value: 'bar', label: 'Bar' },
+            { value: 'line', label: 'Line' }
+          ]}
+        />
       </View>
       <PremiumCard title="Category split">
-        {categoryData.length ? (
+        {categoryData.length > 0 ? (
           <>
             {selectedChartType === 'pie' && (
               <PieChart
@@ -206,65 +247,66 @@ export function ReportsScreen() {
                 height={220}
                 accessor="amount"
                 backgroundColor="transparent"
-                paddingLeft="12"
+                paddingLeft={12}
                 chartConfig={{ color: () => theme.colors.primary }}
               />
             )}
             {selectedChartType === 'bar' && (
               <BarChart
-                data={categoryData}
+                data={seriesData}
                 width={chartWidth}
                 height={220}
-                accessor="amount"
-                backgroundColor="transparent"
+                yAxisLabel=""
+                yAxisSuffix=""
+                fromZero
                 chartConfig={{
                   backgroundGradientFrom: 'transparent',
                   backgroundGradientTo: 'transparent',
-                  color: (opacity: any) => `rgba(${theme.colors.rgb}, ${opacity})`,
-                  labelColor: (opacity: any) => `rgba(${theme.colors.rgb}, ${opacity})`,
+                  decimalPlaces: 0,
+                  color: opacity => `rgba(${hexToRgb(theme.colors.primary)}, ${opacity})`,
+                  labelColor: opacity => `rgba(${hexToRgb(theme.colors.onSurface)}, ${opacity})`,
                   strokeWidth: 2,
-                  spacingBetweenColumns: 10,
-                  gradientPinchOff: () => theme.colors.primary,
                 }}
-                bezier
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 16
                 }}
               />
             )}
             {selectedChartType === 'line' && (
               <LineChart
-                data={categoryData}
+                data={seriesData}
                 width={chartWidth}
                 height={220}
-                accessor="amount"
-                backgroundColor="transparent"
+                yAxisLabel=""
+                yAxisSuffix=""
+                fromZero
+                withDots={false}
                 chartConfig={{
                   backgroundGradientFrom: 'transparent',
                   backgroundGradientTo: 'transparent',
-                  color: (opacity: any) => `rgba(${theme.colors.rgb}, ${opacity})`,
-                  labelColor: (opacity: any) => `rgba(${theme.colors.rgb}, ${opacity})`,
+                  decimalPlaces: 0,
+                  color: opacity => `rgba(${hexToRgb(theme.colors.primary)}, ${opacity})`,
+                  labelColor: opacity => `rgba(${hexToRgb(theme.colors.onSurface)}, ${opacity})`,
                   strokeWidth: 2,
-                  spotify: true,
                 }}
                 bezier
                 style={{
-                  borderRadius: 16,
+                  borderRadius: 16
                 }}
               />
             )}
           </>
         ) : (
-          <Text>No expense data yet.</Text>
+          <RNP.Text>No expense data yet.</RNP.Text>
         )}
       </PremiumCard>
       <PremiumCard title="Analytics">
-        <Text>Total expenses: {formatMoney(stats.totalExpense, currency)}</Text>
-        <Text>Monthly spending: {formatMoney(monthlyTotal, currency)}</Text>
-        <Text>Top spender: {stats.topSpender?.name ?? "None"}</Text>
+        <RNP.Text>Total expenses: {formatMoney(stats.totalExpense, currency)}</RNP.Text>
+        <RNP.Text>Monthly spending: {formatMoney(monthlyTotal, currency)}</RNP.Text>
+        <RNP.Text>Top spender: {stats.topSpender?.name ?? "None"}</RNP.Text>
       </PremiumCard>
       <PremiumCard title="Export and share">
-        <Button mode="contained" icon={() => <Share2 size={18} color="#FFFFFF" />} onPress={async () => {
+        <RNP.Button mode="contained" icon={() => <Share2 size={18} color="#FFFFFF" />} onPress={async () => {
           if (!group) return;
           try {
             const shareText = buildShareSummary(group, expenses, members, settlements);
@@ -276,12 +318,12 @@ export function ReportsScreen() {
             await Sharing.shareAsync(file.uri, { mimeType: 'text/plain' });
           } catch (err) {
             console.error(err);
-            Alert.alert('Failed to share summary');
+            RNP.Alert.alert('Failed to share summary');
           }
         }}>
           Generate share summary
-        </Button>
-        <Button mode="outlined" onPress={async () => {
+        </RNP.Button>
+        <RNP.Button mode="outlined" onPress={async () => {
           try {
             const csv = buildCsvReport(expenses, members);
             const file = await FileSystem.writeAsStringAsync(
@@ -292,28 +334,28 @@ export function ReportsScreen() {
             await Sharing.shareAsync(file.uri, { mimeType: 'text/csv' });
           } catch (err) {
             console.error(err);
-            Alert.alert('Failed to export CSV');
+            RNP.Alert.alert('Failed to export CSV');
           }
         }}>
           Export CSV report
-        </Button>
-        <Button mode="outlined" onPress={generatePDFReport}>
+        </RNP.Button>
+        <RNP.Button mode="outlined" onPress={generatePDFReport}>
           Export PDF report
-        </Button>
-        <Button mode="outlined" onPress={handleBackup}>
+        </RNP.Button>
+        <RNP.Button mode="outlined" onPress={handleBackup}>
           Backup Data
-        </Button>
-        <Button mode="outlined" onPress={handleRestorePick}>
+        </RNP.Button>
+        <RNP.Button mode="outlined" onPress={handleRestorePick}>
           Restore Data
-        </Button>
+        </RNP.Button>
       </PremiumCard>
-    <Modal visible={restoreVisible} onDismiss={() => setRestoreVisible(false)}>
+    <RNP.Modal visible={restoreVisible} onDismiss={() => setRestoreVisible(false)}>
       <View style={{ backgroundColor: '#fff', padding: 24, margin: 24, borderRadius: 8 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
+        <RNP.Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>
           Restore Data
-        </Text>
+        </RNP.Text>
         <View style={{ marginBottom: 12 }}>
-          <CheckBox
+          <RNP.Checkbox
             value={selectAll}
             onValueChange={(v) => {
               setSelectAll(v);
@@ -324,10 +366,10 @@ export function ReportsScreen() {
               }
             }}
           />
-          <Text style={{ marginLeft: 8 }}>Select All</Text>
+          <RNP.Text style={{ marginLeft: 8 }}>Select All</RNP.Text>
         </View>
         <View style={{ marginBottom: 8 }}>
-          <CheckBox
+          <RNP.Checkbox
             value={selectedTypes.includes('groups')}
             onValueChange={(v) => {
               const idx = selectedTypes.indexOf('groups');
@@ -335,10 +377,10 @@ export function ReportsScreen() {
               if (!v && idx !== -1) setSelectedTypes(selectedTypes.filter(t => t !== 'groups'));
             }}
           />
-          <Text style={{ marginLeft: 8 }}>Groups</Text>
+          <RNP.Text style={{ marginLeft: 8 }}>Groups</RNP.Text>
         </View>
         <View style={{ marginBottom: 8 }}>
-          <CheckBox
+          <RNP.Checkbox
             value={selectedTypes.includes('members')}
             onValueChange={(v) => {
               const idx = selectedTypes.indexOf('members');
@@ -346,10 +388,10 @@ export function ReportsScreen() {
               if (!v && idx !== -1) setSelectedTypes(selectedTypes.filter(t => t !== 'members'));
             }}
           />
-          <Text style={{ marginLeft: 8 }}>Members</Text>
+          <RNP.Text style={{ marginLeft: 8 }}>Members</RNP.Text>
         </View>
         <View style={{ marginBottom: 8 }}>
-          <CheckBox
+          <RNP.Checkbox
             value={selectedTypes.includes('expenses')}
             onValueChange={(v) => {
               const idx = selectedTypes.indexOf('expenses');
@@ -357,10 +399,10 @@ export function ReportsScreen() {
               if (!v && idx !== -1) setSelectedTypes(selectedTypes.filter(t => t !== 'expenses'));
             }}
           />
-          <Text style={{ marginLeft: 8 }}>Expenses</Text>
+          <RNP.Text style={{ marginLeft: 8 }}>Expenses</RNP.Text>
         </View>
         <View style={{ marginBottom: 8 }}>
-          <CheckBox
+          <RNP.Checkbox
             value={selectedTypes.includes('settlements')}
             onValueChange={(v) => {
               const idx = selectedTypes.indexOf('settlements');
@@ -368,18 +410,18 @@ export function ReportsScreen() {
               if (!v && idx !== -1) setSelectedTypes(selectedTypes.filter(t => t !== 'settlements'));
             }}
           />
-          <Text style={{ marginLeft: 8 }}>Settlements</Text>
+          <RNP.Text style={{ marginLeft: 8 }}>Settlements</RNP.Text>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 24 }}>
-          <Button mode="text" onPress={() => setRestoreVisible(false)} style={{ marginRight: 12 }}>
+          <RNP.Button mode="text" onPress={() => setRestoreVisible(false)} style={{ marginRight: 12 }}>
             Cancel
-          </Button>
-          <Button mode="contained" onPress={handleRestoreConfirm}>
+          </RNP.Button>
+          <RNP.Button mode="contained" onPress={handleRestoreConfirm}>
             Restore
-          </Button>
+          </RNP.Button>
         </View>
       </View>
-    </Modal>
+    </RNP.Modal>
     </Screen>
   );
 }

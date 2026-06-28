@@ -4,10 +4,10 @@ import { BarChart3, Camera, Home, List, Settings, Users, WalletCards } from "luc
 import { useTheme } from "react-native-paper";
 
 import { DashboardScreen } from "@/features/groups/DashboardScreen";
+import { GroupsScreen } from "@/features/groups/GroupsScreen";
 import { ExpenseEditorScreen } from "@/features/expenses/ExpenseEditorScreen";
 import { ExpenseHistoryScreen } from "@/features/expenses/ExpenseHistoryScreen";
 import { GroupEditorScreen } from "@/features/groups/GroupEditorScreen";
-import { GroupsScreen } from "@/features/groups/GroupsScreen";
 import { MemberEditorScreen } from "@/features/members/MemberEditorScreen";
 import { ReportsScreen } from "@/features/analytics/ReportsScreen";
 import { ScannerScreen } from "@/features/scanner/ScannerScreen";
@@ -40,13 +40,13 @@ function MainTabs() {
         }
       }}
     >
-      <Tabs.Screen name="Home" component={DashboardScreen} options={{ tabBarIcon: (p) => <Home {...p} /> }} />
-      <Tabs.Screen name="Groups" component={GroupsScreen} options={{ tabBarIcon: (p) => <Users {...p} /> }} />
-      <Tabs.Screen name="History" component={ExpenseHistoryScreen} options={{ tabBarIcon: (p) => <List {...p} /> }} />
-      <Tabs.Screen name="Settlements" component={SettlementScreen} options={{ tabBarIcon: (p) => <WalletCards {...p} /> }} />
-      <Tabs.Screen name="Reports" component={ReportsScreen} options={{ tabBarIcon: (p) => <BarChart3 {...p} /> }} />
-      <Tabs.Screen name="Scanner" component={ScannerScreen} options={{ tabBarIcon: (p) => <Camera {...p} /> }} />
-      <Tabs.Screen name="Settings" component={SettingsScreen} options={{ tabBarIcon: (p) => <Settings {...p} /> }} />
+      <Tabs.Screen name="Home" component={DashboardScreen} options={{ tabBarIcon: ({ focused, color, size }) => <Home size={size} color={color} /> }} />
+      <Tabs.Screen name="Groups" component={GroupsScreen} options={{ tabBarIcon: ({ focused, color, size }) => <Users size={size} color={color} /> }} />
+      <Tabs.Screen name="History" component={ExpenseHistoryScreen} options={{ tabBarIcon: ({ focused, color, size }) => <List size={size} color={color} /> }} />
+      <Tabs.Screen name="Settlements" component={SettlementScreen} options={{ tabBarIcon: ({ focused, color, size }) => <WalletCards size={size} color={color} /> }} />
+      <Tabs.Screen name="Reports" component={ReportsScreen} options={{ tabBarIcon: ({ focused, color, size }) => <BarChart3 size={size} color={color} /> }} />
+      <Tabs.Screen name="Scanner" component={ScannerScreen} options={{ tabBarIcon: ({ focused, color, size }) => <Camera size={size} color={color} /> }} />
+      <Tabs.Screen name="Settings" component={SettingsScreen} options={{ tabBarIcon: ({ focused, color, size }) => <Settings size={size} color={color} /> }} />
     </Tabs.Navigator>
   );
 }
